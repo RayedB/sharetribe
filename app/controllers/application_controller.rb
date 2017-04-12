@@ -47,6 +47,28 @@ class ApplicationController < ActionController::Base
 
   attr_reader :current_user
 
+  prepend_before_filter :migrate_session
+
+  def migrate_session
+    # migrating over old sessions
+    binding.pry
+
+    unless session.exists?
+      binding.pry
+      session_id_or_session_data = request.cookies["_st_session"]
+      session_model = ActiveRecord::SessionStore::Session.find_by_session_id(session_id_or_session_data)
+
+      if session_model
+        data = session_model.data
+        data.each do |key,value|
+          session[key] = value
+        end
+        session_model.destroy
+      end
+    end
+
+  end
+
   def redirect_removed_locale
     if params[:locale] && Kassi::Application.config.REMOVED_LOCALES.include?(params[:locale])
       fallback = Kassi::Application.config.REMOVED_LOCALE_FALLBACKS[params[:locale]]
