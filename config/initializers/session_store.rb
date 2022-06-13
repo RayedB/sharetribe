@@ -1,5 +1,7 @@
 # Be sure to restart your server when you modify this file.
 
+require_relative "../../lib/session_helper"
+
 class ActionDispatch::Session::MigrateToCookieStore < ActionDispatch::Session::CookieStore
 
   def load_session(req)
@@ -13,7 +15,8 @@ class ActionDispatch::Session::MigrateToCookieStore < ActionDispatch::Session::C
         db_session = find_db_session(req)
 
         if db_session
-          [db_session.session_id, db_session.data]
+          db_sid = SessionHelper.create_from_migrated.session_id
+          [db_session.session_id, db_session.data.merge(db_sid: db_sid)]
         else
           data = persistent_session_id!(data)
           [data["session_id"], data]
